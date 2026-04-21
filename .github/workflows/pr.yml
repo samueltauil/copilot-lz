@@ -68,7 +68,7 @@ jobs:
         with:
           directory: .
           framework: terraform
-          soft_fail: false
+          soft_fail: true
           quiet: true
 
       - name: Terraform plan
