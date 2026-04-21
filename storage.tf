@@ -82,3 +82,26 @@ resource "azurerm_monitor_diagnostic_setting" "storage" {
     category = "Transaction"
   }
 }
+
+# ── Brownfield storage account (imported from rg-brownfield-demo) ──────────
+# Faithful import — policy violations preserved for Act 2 remediation.
+resource "azurerm_storage_account" "brownfield" {
+  name                = "stbfdemolz7a6988"
+  resource_group_name = azurerm_resource_group.brownfield.name
+  location            = azurerm_resource_group.brownfield.location
+
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
+  access_tier              = "Hot"
+  min_tls_version          = "TLS1_0"
+
+  public_network_access_enabled   = true
+  allow_nested_items_to_be_public = false
+  shared_access_key_enabled       = false
+  https_traffic_only_enabled      = true
+
+  network_rules {
+    default_action = "Allow"
+  }
+}

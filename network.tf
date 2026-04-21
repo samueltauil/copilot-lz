@@ -33,3 +33,25 @@ resource "azurerm_subnet_network_security_group_association" "app" {
   subnet_id                 = azurerm_subnet.app.id
   network_security_group_id = azurerm_network_security_group.app.id
 }
+
+# ── Brownfield network resources (imported from rg-brownfield-demo) ────────
+
+resource "azurerm_virtual_network" "brownfield" {
+  name                = "vnet-brownfield-demo"
+  location            = azurerm_resource_group.brownfield.location
+  resource_group_name = azurerm_resource_group.brownfield.name
+  address_space       = ["10.50.0.0/16"]
+}
+
+resource "azurerm_subnet" "brownfield_default" {
+  name                 = "snet-default"
+  resource_group_name  = azurerm_resource_group.brownfield.name
+  virtual_network_name = azurerm_virtual_network.brownfield.name
+  address_prefixes     = ["10.50.1.0/24"]
+}
+
+resource "azurerm_network_security_group" "brownfield" {
+  name                = "nsg-brownfield-demo"
+  location            = azurerm_resource_group.brownfield.location
+  resource_group_name = azurerm_resource_group.brownfield.name
+}
