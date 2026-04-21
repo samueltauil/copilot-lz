@@ -1,0 +1,12 @@
+# Auto-detect text and normalize to LF in the repo.
+* text=auto
+
+# Shell scripts must always be LF (WSL / Linux).
+*.sh text eol=lf
+
+# Terraform files are fine with auto detection.
+*.tf text
+
+# Keep Windows batch files as CRLF if we ever add them.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
