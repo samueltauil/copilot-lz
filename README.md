@@ -41,6 +41,7 @@ One engineer, one day, three moves:
 | [.tflint.hcl](.tflint.hcl) | TFLint config (azurerm ruleset) |
 | [.github/copilot-instructions.md](.github/copilot-instructions.md) | Repo context for Copilot chat + agent |
 | [.github/instructions/terraform-landing-zone.instructions.md](.github/instructions/terraform-landing-zone.instructions.md) | **Policy file** — the reviewer |
+| [.github/prompts/](.github/prompts/) | Pre-baked `/act1`, `/act2`, `/act3` demo prompts |
 
 ## Local bootstrap
 
@@ -108,12 +109,9 @@ Federate the app registration to this repo's `pull_request` and
 ### 0:45–3:15 — Act 1: Import brownfield
 **Setup:** VS Code with [imports.tf](imports.tf) open; Copilot chat in **Agent** mode.
 
-**Prompt to type (verbatim):**
-> Use `az` to list every resource in resource group `rg-brownfield-demo`. For
-> each one, add an `import {}` block to `imports.tf` and the matching
-> `resource {}` definition in the appropriate file (storage → storage.tf,
-> network → network.tf). Follow `.github/copilot-instructions.md`. When done,
-> run `terraform fmt` and `terraform plan` and show me the summary.
+**Prompt:** run [/act1-import-brownfield](.github/prompts/act1-import-brownfield.prompt.md)
+(type `/act1-import-brownfield` in Copilot chat, or open the file and click
+“Run prompt”).
 
 **While it runs, narrate:**
 - Agent reads the instructions file automatically.
@@ -149,10 +147,8 @@ Open the PR on github.com. Copilot Code Review runs automatically (or click
 - `LZ-TAG-01` — missing required tags
 - `LZ-SEC-02` — `allow_nested_items_to_be_public` not set
 
-**Fix in VS Code** (Copilot inline edit, one prompt):
-> Apply the Copilot review suggestions on this PR: set
-> `public_network_access_enabled = false`, use `local.required_tags`, and set
-> `allow_nested_items_to_be_public = false`.
+**Fix in VS Code** via prompt file:
+run [/act2-fix-review-comments](.github/prompts/act2-fix-review-comments.prompt.md).
 
 Push the fix → checks go green → "Approved by Copilot."
 
@@ -170,8 +166,13 @@ Scroll the plan diff in the issue body.
 > "Nightly workflow compared Terraform to Azure, found a delta, opened this
 > issue. No human woke up. Now watch what happens when we assign it."
 
-Show the **Assignees → `@copilot`** selection you already made. Cut to the
-**PR the coding agent already opened** (pre-baked overnight).
+Show the **Assignees → `@copilot`** selection you already made. The coding
+agent receives its marching orders from
+[/act3-remediate-drift](.github/prompts/act3-remediate-drift.prompt.md) —
+attach or link that prompt in the issue body if you want to make the
+instructions explicit on stage.
+
+Cut to the **PR the coding agent already opened** (pre-baked overnight).
 
 Walk the PR:
 1. Issue linked in the body.
