@@ -1,0 +1,6 @@
+environment = "dev"
+location    = "eastus2"
+owner       = "platform-infra"
+cost_center = "CC-INFRA-001"
+data_class  = "internal"
+name_prefix = "lz"

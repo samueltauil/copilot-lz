@@ -1,0 +1,103 @@
+name: Drift detection
+
+on:
+  schedule:
+    - cron: "17 7 * * *"   # 07:17 UTC daily
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  drift:
+    name: Detect drift vs. main
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_SA }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=iac-demo.tfstate"
+
+      - name: Terraform plan (detailed exit code)
+        id: plan
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          terraform plan -no-color -input=false -detailed-exitcode -lock-timeout=5m \
+            | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: File GitHub Issue on drift
+        if: steps.plan.outputs.exitcode == '2'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('plan.txt', 'utf8');
+            const truncated = plan.length > 55000 ? plan.slice(0, 55000) + '\n...[truncated]' : plan;
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `Drift detected on ${today}`;
+            const body = [
+              '`drift.yml` detected configuration drift between `main` and the live Azure estate.',
+              '',
+              '**Next step:** Assign this issue to `@copilot` to have the coding agent',
+              'open a remediation PR that reconciles the drift per our landing-zone policy',
+              'in [.github/instructions/terraform-landing-zone.instructions.md](.github/instructions/terraform-landing-zone.instructions.md).',
+              '',
+              '<details><summary>Plan output</summary>',
+              '',
+              '```hcl',
+              truncated,
+              '```',
+              '',
+              '</details>'
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+              labels: ['drift', 'infra']
+            });
+
+      - name: Fail job on drift
+        if: steps.plan.outputs.exitcode == '2'
+        run: |
+          echo "Drift detected — see issue filed by this run."
+          exit 1
+
+      - name: Fail job on plan error
+        if: steps.plan.outputs.exitcode != '0' && steps.plan.outputs.exitcode != '2'
+        run: |
+          echo "terraform plan failed (exit ${{ steps.plan.outputs.exitcode }})."
+          exit 1

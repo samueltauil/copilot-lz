@@ -1,0 +1,19 @@
+# Local Terraform
+.terraform/
+.terraform.lock.hcl.bak
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Vars
+terraform.tfvars
+*.auto.tfvars
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
