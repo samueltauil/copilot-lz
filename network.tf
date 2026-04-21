@@ -41,6 +41,7 @@ resource "azurerm_virtual_network" "brownfield" {
   location            = azurerm_resource_group.brownfield.location
   resource_group_name = azurerm_resource_group.brownfield.name
   address_space       = ["10.50.0.0/16"]
+  tags                = local.required_tags
 }
 
 resource "azurerm_subnet" "brownfield_default" {
@@ -54,4 +55,5 @@ resource "azurerm_network_security_group" "brownfield" {
   name                = "nsg-brownfield-demo"
   location            = azurerm_resource_group.brownfield.location
   resource_group_name = azurerm_resource_group.brownfield.name
+  tags                = local.required_tags
 }

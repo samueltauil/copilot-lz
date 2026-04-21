@@ -15,6 +15,7 @@ import {
 resource "azurerm_resource_group" "brownfield" {
   name     = "rg-brownfield-demo"
   location = "eastus2"
+  tags     = local.required_tags
 }
 
 # ── Storage Account ────────────────────────────────────────────────────────
