@@ -246,3 +246,79 @@ if (( ${#FAILED[@]} > 0 )); then
 fi
 
 log "All dependencies installed."
+
+# --- Pre-demo preparation checklist ----------------------------------------
+# Prints the same checklist captured in README.md > "Pre-session checklist"
+# so it's visible immediately after install.
+
+cat <<EOF
+
+${BOLD}=== Pre-demo preparation checklist ===${RESET}
+
+Run these 30 minutes before the session. Full narrative in README.md.
+
+  1. Authenticate to Azure:
+       az login
+       az account show -o table
+       az account set --subscription "<sub-id>"
+
+  2. Authenticate to GitHub:
+       gh auth status        # expect 'Logged in to github.com'
+
+  3. Pre-provision the brownfield RG OUTSIDE Terraform (Act 1 target):
+       az group create -n rg-brownfield-demo -l eastus2
+       az storage account create \\
+         -g rg-brownfield-demo -n stbrownfield\$RANDOM \\
+         --allow-blob-public-access true        # intentional violation
+       az network vnet create -g rg-brownfield-demo -n vnet-brownfield --address-prefix 10.90.0.0/16
+       az network nsg create -g rg-brownfield-demo -n nsg-brownfield
+
+  4. Deploy the platform RG via Terraform (creates state for Act 3 drift):
+       terraform init \\
+         -backend-config="resource_group_name=\$TFSTATE_RG" \\
+         -backend-config="storage_account_name=\$TFSTATE_SA" \\
+         -backend-config="container_name=\$TFSTATE_CONTAINER" \\
+         -backend-config="key=copilot-lz.tfstate"
+       terraform apply       # one-time, done BEFORE the session, not on stage
+
+  5. Create drift on the TF-managed storage account (portal):
+       Toggle 'Allow Blob anonymous access' to On, OR
+       change min_tls_version -> TLS 1.0.
+
+  6. Fire the drift workflow to file the Issue:
+       gh workflow run drift.yml
+       gh issue list --label drift       # confirm issue exists
+
+  7. Assign the drift Issue to @copilot NOW so the remediation PR is ready:
+       gh issue edit <number> --add-assignee copilot
+
+  8. Set repo variables for CI (one-time):
+       gh variable set AZURE_CLIENT_ID --body "<client-id>"
+       gh variable set AZURE_TENANT_ID --body "<tenant-id>"
+       gh variable set AZURE_SUBSCRIPTION_ID --body "<sub-id>"
+       gh variable set TFSTATE_RG --body "<rg>"
+       gh variable set TFSTATE_SA --body "<sa>"
+       gh variable set TFSTATE_CONTAINER --body "<container>"
+
+  9. Federate the Entra app registration for this repo
+     (pull_request + schedule + workflow_dispatch triggers).
+
+ 10. VS Code prep:
+       - Font size >= 16
+       - Close extra tabs, disable notifications
+       - Copilot chat -> Agent mode
+       - Pre-open 4 tabs: repo, PR page, Issues page, latest Actions run
+
+ 11. Verify a clean baseline:
+       terraform fmt -check -recursive
+       terraform validate
+
+ 12. Have a wifi-fail fallback: 3-screenshot PDF (imports.tf, PR review
+     comments, coding-agent PR).
+
+Good luck. The takeaway sentence to land at 9:00:
+  "Copilot lets a small infra team govern brownfield Azure without becoming
+   a bottleneck."
+
+EOF
+
