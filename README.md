@@ -260,7 +260,7 @@ the 5 sequential steps: `fmt` → `validate` → `tflint` → `checkov` → `pla
 > agents do the rote work. You keep the keys — you just stop being the
 > gatekeeper."
 
-🖱️ Pause 2 seconds on the green checks screen. Then hand to Randy for
+🖱️ Pause 2 seconds on the green checks screen. Then hand off for
 CAF/ALZ alignment wrap-up.
 
 ---
